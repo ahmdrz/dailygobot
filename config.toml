@@ -1,5 +1,5 @@
 # Config.toml , dailygobot
 
-token = ""
+token = "###"
 interval = 1
-admin_id = 0
+admin = 0
