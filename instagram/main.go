@@ -30,7 +30,11 @@ func main() {
 
 	log.Println("Connecting to instagram server ...")
 	insta := goinsta.New(conf.Username, conf.Password)
-	feeds, err := insta.TagFeed("golang")
+	err := insta.Login()
+	if err != nil {
+		log.Fatal(err)
+	}
+	feeds, err := insta.TagFeed("Golang")
 	if err != nil {
 		log.Fatal(err)
 	}
