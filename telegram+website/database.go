@@ -50,3 +50,8 @@ func (visit Visit) Save() {
 func (user User) Save() {
 	db.Table("users").Save(&user)
 }
+
+func getvisits(a int) (visits []Visit) {
+	db.Table("visits").Order("date", true).Where("link = ?", a).Scan(&visits)
+	return
+}

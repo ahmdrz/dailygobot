@@ -48,7 +48,8 @@ func main() {
 							ForceReply: true,
 							CustomKeyboard: [][]string{
 								[]string{"New Link"},
-								[]string{"New Post "},
+								[]string{"New Post"},
+								[]string{"Get Link Info"},
 							},
 							ResizeKeyboard:  true,
 							OneTimeKeyboard: true,
@@ -61,6 +62,9 @@ func main() {
 				} else if msg == "New Post" {
 					user.Position = 2
 					bot.SendMessage(message.Sender, "Enter your post with markdown", nil)
+				} else if msg == "Get Link Info" {
+					user.Position = 3
+					bot.SendMessage(message.Sender, "Enter the link ID", nil)
 				} else {
 					if user.Position == 1 {
 						id := newRandomID()
@@ -87,6 +91,26 @@ func main() {
 						})
 					} else if user.Position == 2 {
 						bot.SendMessage(message.Sender, msg, &telebot.SendOptions{
+							ReplyMarkup: telebot.ReplyMarkup{
+								Selective:  true,
+								ForceReply: true,
+								CustomKeyboard: [][]string{
+									[]string{"New Link"},
+									[]string{"New Post "},
+								},
+								ResizeKeyboard:  true,
+								OneTimeKeyboard: true,
+							},
+							ReplyTo:   message,
+							ParseMode: telebot.ModeMarkdown,
+						})
+					} else if user.Position == 3 {
+						id, _ := strconv.Atoi(msg)
+						visits := getvisits(id)
+						for _, visit := range visits {
+							bot.SendMessage(message.Sender, visit.IP+" - "+strconv.FormatInt(visit.Date, 10), nil)
+						}
+						bot.SendMessage(message.Sender, "Total : "+strconv.Itoa(len(visits)), &telebot.SendOptions{
 							ReplyMarkup: telebot.ReplyMarkup{
 								Selective:  true,
 								ForceReply: true,
