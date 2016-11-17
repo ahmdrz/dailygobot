@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -22,7 +23,7 @@ var keyboard [][]string = [][]string{
 }
 
 const (
-	TOKEN   = "268916701:AAHzujvtmANyixZ_wY1Q8kJPRtfPO2Ru6Ts"
+	TOKEN   = "268916701:AAHzujvtmANyixZ_wY1Q8kJPRtfPO2Ru6Ts" // sample token !
 	PORT    = ":8090"
 	ADMINID = 83919508
 )
@@ -39,6 +40,8 @@ func main() {
 	go telegram(bot)
 
 	router := mux.NewRouter()
+	router.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("golng-static/static/"))))
+	router.HandleFunc("/", IndexHandler)
 	router.HandleFunc("/{id}", ShortnerHandler)
 	router.HandleFunc("/api/{time}", ApiHandler)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
@@ -246,6 +249,11 @@ func telegram(bot *telebot.Bot) {
 
 }
 
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	bytes, _ := ioutil.ReadFile("golng-static/index.html")
+	w.Write(bytes)
+}
+
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`
 		<!DOCTYPE html>
@@ -279,7 +287,6 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 func ApiHandler(w http.ResponseWriter, r *http.Request) {
 	errcode := 0
 	posts := []Post{}
-	time.Sleep(5 * time.Second)
 
 	time, err := strconv.Atoi(mux.Vars(r)["time"])
 	if err != nil {
