@@ -25,6 +25,10 @@ func open_db() {
 	if !db.HasTable(&User{}) {
 		db.CreateTable(&User{})
 	}
+
+	if !db.HasTable(&Post{}) {
+		db.CreateTable(&Post{})
+	}
 }
 
 func close_db() {
@@ -39,6 +43,11 @@ func getlink(a int) (link Link) {
 	return
 }
 
+func getpost(a int) (post Post) {
+	db.Table("posts").Find(&post, "id = ?", a)
+	return
+}
+
 func (link Link) Save() {
 	db.Table("links").Save(&link)
 }
@@ -49,6 +58,10 @@ func (visit Visit) Save() {
 
 func (user User) Save() {
 	db.Table("users").Save(&user)
+}
+
+func (post Post) Save() {
+	db.Table("posts").Save(&post)
 }
 
 func getvisits(a int) (visits []Visit) {

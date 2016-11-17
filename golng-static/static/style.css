@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css?family=Lato');
+@import url('https://fonts.googleapis.com/css?family=Dancing+Script');
+body {
+    font-family: 'Lato', sans-serif;
+    padding: 0;
+    margin: 0;
+    background-color: #f8f8f8;
+}
+section {
+    background-color: #f4bf75;
+    box-shadow: 0px 15px 20px #ddd;
+}
+section p {
+    margin: 0;
+    padding-bottom: 1em;
+    padding-top: 3em;
+    text-align: center;
+}
+header {
+    height: 200px;
+    background-color: #f4bf75;
+}
+header h1 {
+    text-align: center;
+    font-family: 'Dancing Script', sans-serif;
+}
+#logo {
+    display: block;
+    position: relative;
+    top: 10px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: 200px;
+}
+footer {
+    background-color: #f4bf75;
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0px 0px 25px #aaa;
+}
+footer h5 {
+    font-weight: lighter;
+}
+#load {
+    background-color: #FBE015;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    position: relative;
+    left: 50%;
+    transform: translate(-50%, 0);
+    margin-bottom: 3em;
+    margin-top: 3em;
+}
+#preloader {
+    position: relative;
+    display: inline-block;
+    left: 50%;
+    transform: translate(-50%, 0);
+}
+
+.container {
+  min-height: 300px;
+}

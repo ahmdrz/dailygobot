@@ -18,3 +18,9 @@ type User struct {
 	Position int
 	LastUsed int64
 }
+
+type Post struct {
+	ID      int    `json:"id"`
+	Time    int64  `json:"time"`
+	Content string `json:"content"`
+}

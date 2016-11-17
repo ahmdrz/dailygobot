@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
@@ -9,28 +10,40 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/tucnak/telebot"
 )
 
+var keyboard [][]string = [][]string{
+	[]string{"New Link"},
+	[]string{"New Post"},
+	[]string{"Get Link Info"},
+	[]string{"Post To Site"},
+}
+
 const (
-	TOKEN   = "-"
-	PORT    = ":-"
-	ADMINID = 1
+	TOKEN   = "268916701:AAHzujvtmANyixZ_wY1Q8kJPRtfPO2Ru6Ts"
+	PORT    = ":8090"
+	ADMINID = 83919508
 )
 
 func main() {
 	open_db()
 	rand.Seed(time.Now().Unix())
+
 	bot, err := telebot.NewBot(TOKEN)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	go telegram(bot)
+
 	router := mux.NewRouter()
 	router.HandleFunc("/{id}", ShortnerHandler)
+	router.HandleFunc("/api/{time}", ApiHandler)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
-	log.Fatal(http.ListenAndServe(PORT, router))
+	handler := cors.Default().Handler(router)
+	log.Fatal(http.ListenAndServe(PORT, handler))
 }
 
 func telegram(bot *telebot.Bot) {
@@ -38,6 +51,7 @@ func telegram(bot *telebot.Bot) {
 	bot.Listen(messages, 1*time.Second)
 
 	for message := range messages {
+		log.Println(message)
 		msg := message.Text
 		user := User{}
 		db.Table("users").Find(&user, "user_id = ?", message.Sender.ID)
@@ -51,13 +65,9 @@ func telegram(bot *telebot.Bot) {
 				user.Position = 0
 				bot.SendMessage(message.Sender, "Hello, "+message.Sender.FirstName+"! I'm the daily Go bot ,\nChoose an option.", &telebot.SendOptions{
 					ReplyMarkup: telebot.ReplyMarkup{
-						Selective:  true,
-						ForceReply: true,
-						CustomKeyboard: [][]string{
-							[]string{"New Link"},
-							[]string{"New Post"},
-							[]string{"Get Link Info"},
-						},
+						Selective:       true,
+						ForceReply:      true,
+						CustomKeyboard:  keyboard,
 						ResizeKeyboard:  true,
 						OneTimeKeyboard: true,
 					},
@@ -72,8 +82,12 @@ func telegram(bot *telebot.Bot) {
 			} else if msg == "Get Link Info" {
 				user.Position = 3
 				bot.SendMessage(message.Sender, "Enter the link ID", nil)
+			} else if msg == "Post To Site" {
+				user.Position = 4
+				bot.SendMessage(message.Sender, "Enter the link ID", nil)
 			} else {
 				if user.Position == 1 {
+					user.Position = 0
 					id := newRandomID()
 					for getlink(id).ID > 0 {
 						id = newRandomID()
@@ -85,28 +99,21 @@ func telegram(bot *telebot.Bot) {
 
 					bot.SendMessage(message.Sender, "Link is : \n\ngolng.ml/"+strconv.Itoa(id), &telebot.SendOptions{
 						ReplyMarkup: telebot.ReplyMarkup{
-							Selective:  true,
-							ForceReply: true,
-							CustomKeyboard: [][]string{
-								[]string{"New Link"},
-								[]string{"New Post "},
-								[]string{"Get Link Info"},
-							},
+							Selective:       true,
+							ForceReply:      true,
+							CustomKeyboard:  keyboard,
 							ResizeKeyboard:  true,
 							OneTimeKeyboard: true,
 						},
 						ReplyTo: message,
 					})
 				} else if user.Position == 2 {
+					user.Position = 0
 					bot.SendMessage(message.Sender, msg, &telebot.SendOptions{
 						ReplyMarkup: telebot.ReplyMarkup{
-							Selective:  true,
-							ForceReply: true,
-							CustomKeyboard: [][]string{
-								[]string{"New Link"},
-								[]string{"New Post "},
-								[]string{"Get Link Info"},
-							},
+							Selective:       true,
+							ForceReply:      true,
+							CustomKeyboard:  keyboard,
 							ResizeKeyboard:  true,
 							OneTimeKeyboard: true,
 						},
@@ -114,6 +121,7 @@ func telegram(bot *telebot.Bot) {
 						ParseMode: telebot.ModeMarkdown,
 					})
 				} else if user.Position == 3 {
+					user.Position = 0
 					id, _ := strconv.Atoi(msg)
 					visits := getvisits(id)
 					for _, visit := range visits {
@@ -121,19 +129,49 @@ func telegram(bot *telebot.Bot) {
 					}
 					bot.SendMessage(message.Sender, "Total : "+strconv.Itoa(len(visits)), &telebot.SendOptions{
 						ReplyMarkup: telebot.ReplyMarkup{
-							Selective:  true,
-							ForceReply: true,
-							CustomKeyboard: [][]string{
-								[]string{"New Link"},
-								[]string{"New Post "},
-								[]string{"Get Link Info"},
-							},
+							Selective:       true,
+							ForceReply:      true,
+							CustomKeyboard:  keyboard,
 							ResizeKeyboard:  true,
 							OneTimeKeyboard: true,
 						},
 						ReplyTo:   message,
 						ParseMode: telebot.ModeMarkdown,
 					})
+				} else if user.Position == 4 {
+					id, _ := strconv.Atoi(msg)
+					post := Post{}
+					post.ID = id
+					post.Save()
+					user.Position = id
+					bot.SendMessage(message.Sender, "Enter the message to post in site", &telebot.SendOptions{
+						ReplyMarkup: telebot.ReplyMarkup{
+							Selective:       true,
+							ForceReply:      true,
+							CustomKeyboard:  keyboard,
+							ResizeKeyboard:  true,
+							OneTimeKeyboard: true,
+						},
+						ReplyTo:   message,
+						ParseMode: telebot.ModeMarkdown,
+					})
+				} else if user.Position > 0 { // new post to site , post id is in user.position
+					post := getpost(user.Position)
+					post.Content = msg
+					post.Time = time.Now().Unix()
+					post.Save()
+					bot.SendMessage(message.Sender, "Message saved", &telebot.SendOptions{
+						ReplyMarkup: telebot.ReplyMarkup{
+							Selective:       true,
+							ForceReply:      true,
+							CustomKeyboard:  keyboard,
+							ResizeKeyboard:  true,
+							OneTimeKeyboard: true,
+						},
+						ReplyTo:   message,
+						ParseMode: telebot.ModeMarkdown,
+					})
+					user.Position = 0
 				}
 			}
 		} else {
@@ -236,6 +274,28 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 		</body>
 		</html>
 	`))
+}
+
+func ApiHandler(w http.ResponseWriter, r *http.Request) {
+	errcode := 0
+	posts := []Post{}
+	time.Sleep(5 * time.Second)
+
+	time, err := strconv.Atoi(mux.Vars(r)["time"])
+	if err != nil {
+		errcode = 1
+	} else {
+		if time > 0 { // not first time
+			db.Table("posts").Where("time < ?", time).Scan(&posts)
+		} else { // first time
+			db.Table("posts").Scan(&posts)
+		}
+	}
+	bytes, _ := json.Marshal(&map[string]interface{}{
+		"errorcode": errcode,
+		"posts":     posts,
+	})
+	w.Write(bytes)
 }
 
 func ShortnerHandler(w http.ResponseWriter, r *http.Request) {
