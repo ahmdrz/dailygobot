@@ -1,13 +1,13 @@
 var items = [];
-var position = "left";
+var position = "right";
 
 $(document).ready(function() {  
     $(".time").each(function() {
         var item = $(this);
         item.html(timeConverter(item.html()))
     })
-    RequestData();
-
+    
+    $("#preloader").hide();
     $("#load").click(RequestData);
 });
 
