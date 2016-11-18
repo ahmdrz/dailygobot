@@ -1,5 +1,6 @@
 var last = 0;
 var items = [];
+var position = "left";
 
 $(document).ready(function() {
     RequestData();
@@ -46,7 +47,6 @@ function RequestData() {
         },
         success: function(data) {
             data = JSON.parse(data);
-            var position = "left";
             if (data.errorcode == 0) {
                 var result = data.posts;
                 for (var x = 0; x < result.length; x++) {

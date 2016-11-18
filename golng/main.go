@@ -54,7 +54,6 @@ func telegram(bot *telebot.Bot) {
 	bot.Listen(messages, 1*time.Second)
 
 	for message := range messages {
-		log.Println(message)
 		msg := message.Text
 		user := User{}
 		db.Table("users").Find(&user, "user_id = ?", message.Sender.ID)
@@ -65,6 +64,18 @@ func telegram(bot *telebot.Bot) {
 
 		if message.Sender.ID == ADMINID {
 			if msg == "/start" {
+				user.Position = 0
+				bot.SendMessage(message.Sender, "Hello, "+message.Sender.FirstName+"! I'm the daily Go bot ,\nChoose an option.", &telebot.SendOptions{
+					ReplyMarkup: telebot.ReplyMarkup{
+						Selective:       true,
+						ForceReply:      true,
+						CustomKeyboard:  keyboard,
+						ResizeKeyboard:  true,
+						OneTimeKeyboard: true,
+					},
+					ReplyTo: message,
+				})
+			} else if msg == "/cancel" {
 				user.Position = 0
 				bot.SendMessage(message.Sender, "Hello, "+message.Sender.FirstName+"! I'm the daily Go bot ,\nChoose an option.", &telebot.SendOptions{
 					ReplyMarkup: telebot.ReplyMarkup{
@@ -293,9 +304,9 @@ func ApiHandler(w http.ResponseWriter, r *http.Request) {
 		errcode = 1
 	} else {
 		if time > 0 { // not first time
-			db.Table("posts").Where("time < ?", time).Scan(&posts)
+			db.Table("posts").Order("time desc").Where("time < ?", time).Limit(5).Scan(&posts)
 		} else { // first time
-			db.Table("posts").Scan(&posts)
+			db.Table("posts").Order("time desc").Limit(5).Scan(&posts)
 		}
 	}
 	bytes, _ := json.Marshal(&map[string]interface{}{

@@ -41,6 +41,7 @@ footer {
 footer h5 {
     font-weight: lighter;
 }
+
 #load {
     background-color: #FBE015;
     border: none;
@@ -55,7 +56,13 @@ footer h5 {
     transform: translate(-50%, 0);
     margin-bottom: 3em;
     margin-top: 3em;
+    transition: all 300ms ease-in-out;
 }
+
+#load:hover {
+    box-shadow: 0px 0px 10px #aaa;
+}
+
 #preloader {
     position: relative;
     display: inline-block;
