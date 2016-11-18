@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/hoisie/mustache"
 	"github.com/rs/cors"
 	"github.com/tucnak/telebot"
 )
@@ -22,17 +23,22 @@ var keyboard [][]string = [][]string{
 	[]string{"Post To Site"},
 }
 
-const (
-	TOKEN   = "268916701:AAHzujvtmANyixZ_wY1Q8kJPRtfPO2Ru6Ts" // sample token !
-	PORT    = ":8090"
-	ADMINID = 83919508
-)
+var Config struct {
+	Token string `json:"token"`
+	Admin int    `json:"admin"`
+	Port  string `json:"port"`
+}
 
 func main() {
 	open_db()
 	rand.Seed(time.Now().Unix())
+	bytes, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		panic(err)
+	}
+	json.Unmarshal(bytes, &Config)
 
-	bot, err := telebot.NewBot(TOKEN)
+	bot, err := telebot.NewBot(Config.Token)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,7 +52,7 @@ func main() {
 	router.HandleFunc("/api/{time}", ApiHandler)
 	router.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
 	handler := cors.Default().Handler(router)
-	log.Fatal(http.ListenAndServe(PORT, handler))
+	log.Fatal(http.ListenAndServe(Config.Port, handler))
 }
 
 func telegram(bot *telebot.Bot) {
@@ -62,7 +68,7 @@ func telegram(bot *telebot.Bot) {
 		}
 		user.LastUsed = time.Now().Unix()
 
-		if message.Sender.ID == ADMINID {
+		if message.Sender.ID == Config.Admin {
 			if msg == "/start" {
 				user.Position = 0
 				bot.SendMessage(message.Sender, "Hello, "+message.Sender.FirstName+"! I'm the daily Go bot ,\nChoose an option.", &telebot.SendOptions{
@@ -212,7 +218,7 @@ func telegram(bot *telebot.Bot) {
 				bot.SendMessage(message.Sender, "Enter your message for admin", nil)
 			} else {
 				if user.Position == 1 {
-					err = bot.SendMessage(telebot.Chat{ID: ADMINID}, "Suggest : "+message.Text+" - @"+message.Sender.Username+" ["+message.Sender.FirstName+" "+message.Sender.LastName+"] ", nil)
+					err = bot.ForwardMessage(telebot.User{ID: Config.Admin}, message)
 					if err != nil {
 						log.Println(err.Error())
 						bot.SendMessage(message.Sender, "Can't send message", nil)
@@ -232,7 +238,7 @@ func telegram(bot *telebot.Bot) {
 						})
 					}
 				} else if user.Position == 2 {
-					err = bot.SendMessage(telebot.Chat{ID: ADMINID}, "Contact : "+message.Text+" - @"+message.Sender.Username+" ["+message.Sender.FirstName+" "+message.Sender.LastName+"] ", nil)
+					err = bot.ForwardMessage(telebot.User{ID: Config.Admin}, message)
 					if err != nil {
 						log.Println(err.Error())
 						bot.SendMessage(message.Sender, "Can't send message", nil)
@@ -261,8 +267,23 @@ func telegram(bot *telebot.Bot) {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	bytes, _ := ioutil.ReadFile("golng-static/index.html")
-	w.Write(bytes)
+	type Posts struct {
+		Post
+		Position string
+	}
+	posts := []Posts{}
+	db.Table("posts").Order("time desc").Limit(5).Scan(&posts)
+	for id, _ := range posts {
+		posts[id].Position = "right"
+		if id%2 == 0 {
+			posts[id].Position = "left"
+		}
+	}
+	lasttime := posts[len(posts)-1].Time
+	w.Write([]byte(mustache.RenderFile("golng-static/index.html", map[string]interface{}{
+		"posts":    posts,
+		"lasttime": lasttime,
+	})))
 }
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {

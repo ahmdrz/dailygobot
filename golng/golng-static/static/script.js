@@ -1,8 +1,11 @@
-var last = 0;
 var items = [];
 var position = "left";
 
-$(document).ready(function() {
+$(document).ready(function() {  
+    $(".time").each(function() {
+        var item = $(this);
+        item.html(timeConverter(item.html()))
+    })
     RequestData();
 
     $("#load").click(RequestData);

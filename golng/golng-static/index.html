@@ -52,7 +52,20 @@
 
     <div class="container">
         <div id="timeline">
-
+            {{#posts}}
+            <div class="timeline-item">
+                <div class="timeline-icon"></div>
+                <div class="timeline-content {{Position}}">
+                    <h2>The Daily Golang</h2>
+                    <p>
+                        {{Content}}
+                    </p>
+                    <hr>
+                    <h5 class="time">{{Time}}</h5>
+                    <a href="/{{ID}}"> Link</a>
+                </div>
+            </div>
+            {{/posts}}
         </div>
         <div id="preloader">
             <div class="md-preloader">
@@ -72,6 +85,9 @@
 
     <script src="static/jquery-3.1.0.min.js"></script>
     <script src="static/jquery.easing.min.js"></script>
+    <script>
+      var last = {{lasttime}};
+    </script>
     <script src="static/script.js"></script>
 </body>
 
